@@ -159,6 +159,71 @@
         margin-top: 14px;
       }
 
+      .statusCard {
+        margin-top: 14px;
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .statusRow {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .statusDot {
+        width: 10px;
+        height: 10px;
+        margin-top: 5px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.35);
+        box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12);
+      }
+
+      .statusText b {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .statusBody {
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.4;
+      }
+
+      .statusActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .statusDetails {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.45;
+      }
+
+      .statusDetails summary {
+        cursor: pointer;
+        color: var(--text);
+        opacity: 0.9;
+      }
+
+      .noscript {
+        max-width: var(--max);
+        margin: 12px auto 0;
+        padding: 12px 18px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+      }
+
       .btn {
         cursor: pointer;
         border: 1px solid transparent;
@@ -331,6 +396,37 @@
             </button>
           </div>
 
+          <div class="statusCard" id="demoStatus" role="status" aria-live="polite">
+            <div class="statusRow">
+              <span class="statusDot" aria-hidden="true"></span>
+              <div class="statusText">
+                <b id="statusTitle">Loading voice widget…</b>
+                <div class="statusBody" id="statusBody">
+                  If this takes more than a few seconds, your browser may be blocking the widget script.
+                </div>
+              </div>
+            </div>
+
+            <div class="statusActions" id="statusActions" hidden>
+              <button class="btnSecondary" type="button" id="retryWidgetBtn">
+                Retry
+              </button>
+              <button class="btnSecondary" type="button" id="copyTroubleshootBtn">
+                Copy troubleshooting steps
+              </button>
+            </div>
+
+            <details class="statusDetails" id="statusDetails" hidden>
+              <summary>Having trouble? Fix it in 30 seconds</summary>
+              <ul>
+                <li><b>Mic blocked:</b> click the mic/camera icon in the address bar → allow Microphone → reload.</li>
+                <li><b>iOS Safari:</b> Settings → Safari → Microphone → Allow, then reload this page.</li>
+                <li><b>Widget won’t connect:</b> this usually means the agent isn’t public. Switch it to public, or use a signed-URL/token flow.</li>
+                <li><b>Still stuck:</b> try a different browser (Chrome/Edge), or disable tracker/ad blockers for this page.</li>
+              </ul>
+            </details>
+          </div>
+
           <div class="steps" aria-label="How to try it">
             <div class="step">
               <b>1) Click Start</b>
@@ -419,6 +515,11 @@
       id="convaiWidget"
       agent-id="agent_0701kp8zca3sfyb986q071k7xv25"
     ></elevenlabs-convai>
+    <noscript>
+      <div class="noscript">
+        This demo requires JavaScript to load the ElevenLabs voice widget. Please enable JavaScript and reload.
+      </div>
+    </noscript>
     <script
       src="https://elevenlabs.io/convai-widget/index.js"
       async
@@ -432,6 +533,19 @@
         "Give me the top objection responses",
         "Deutsche Telekom",
         "Yes",
+      ].join("\n");
+
+      const troubleshootText = [
+        "Troubleshooting — SDR Morning Briefing demo",
+        "",
+        "1) If microphone is blocked: allow Microphone for this site, then reload.",
+        "   - Desktop: address bar mic/camera icon → Allow → Reload",
+        "   - iOS Safari: Settings → Safari → Microphone → Allow → Reload",
+        "",
+        "2) If the widget won’t connect: the ElevenLabs agent may not be public.",
+        "   Switch the agent to public or use a signed-URL/token flow.",
+        "",
+        "3) If still stuck: disable ad/tracker blockers for this page or try Chrome/Edge.",
       ].join("\n");
 
       async function copyText(text) {
@@ -456,6 +570,71 @@
         el.remove();
       }
 
+      function setStatus(state) {
+        const title = document.getElementById("statusTitle");
+        const body = document.getElementById("statusBody");
+        const actions = document.getElementById("statusActions");
+        const details = document.getElementById("statusDetails");
+
+        const states = {
+          loading: {
+            title: "Loading voice widget…",
+            body: "If this takes more than a few seconds, your browser may be blocking the widget script.",
+            showActions: false,
+            showDetails: false,
+          },
+          ready: {
+            title: "Widget ready",
+            body: "Click the widget launcher (bottom-right) and allow microphone access.",
+            showActions: false,
+            showDetails: false,
+          },
+          micDenied: {
+            title: "Microphone blocked",
+            body: "Allow microphone access for this site, then reload.",
+            showActions: true,
+            showDetails: true,
+          },
+          widgetMissing: {
+            title: "Widget didn’t load",
+            body: "The widget script may be blocked by a browser setting or an ad/tracker blocker.",
+            showActions: true,
+            showDetails: true,
+          },
+        };
+
+        const next = states[state] ?? states.loading;
+        title.textContent = next.title;
+        body.textContent = next.body;
+        actions.hidden = !next.showActions;
+        details.hidden = !next.showDetails;
+      }
+
+      async function checkMicPermission() {
+        try {
+          if (!navigator.permissions?.query) return null;
+          const status = await navigator.permissions.query({ name: "microphone" });
+          return status?.state ?? null; // "granted" | "prompt" | "denied"
+        } catch {
+          return null;
+        }
+      }
+
+      async function initStatus() {
+        setStatus("loading");
+
+        const mic = await checkMicPermission();
+        if (mic === "denied") {
+          setStatus("micDenied");
+          return;
+        }
+
+        setTimeout(() => {
+          const defined = !!customElements.get("elevenlabs-convai");
+          setStatus(defined ? "ready" : "widgetMissing");
+        }, 4500);
+      }
+
       document.getElementById("tryScriptBtn").addEventListener("click", async () => {
         const btn = document.getElementById("tryScriptBtn");
         const prev = btn.textContent;
@@ -468,6 +647,25 @@
           setTimeout(() => (btn.textContent = prev), 900);
         }
       });
+
+      document.getElementById("retryWidgetBtn")?.addEventListener("click", () => {
+        location.reload();
+      });
+
+      document
+        .getElementById("copyTroubleshootBtn")
+        ?.addEventListener("click", async () => {
+          const btn = document.getElementById("copyTroubleshootBtn");
+          const prev = btn.textContent;
+          try {
+            await copyText(troubleshootText);
+            btn.textContent = "Copied";
+          } catch {
+            btn.textContent = "Copy failed";
+          } finally {
+            setTimeout(() => (btn.textContent = prev), 900);
+          }
+        });
 
       // The widget renders its own floating launcher. This button nudges the user,
       // and scrolls to top so the launcher is visible on mobile.
@@ -484,6 +682,8 @@
           setTimeout(() => (btn.textContent = prev), 1400);
         }
       });
+
+      initStatus();
     </script>
   </body>
 </html>
