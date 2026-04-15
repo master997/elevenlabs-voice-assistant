@@ -1,0 +1,119 @@
+[
+  {
+    "type": "webhook",
+    "name": "get_calendar",
+    "description": "Returns today's scheduled meetings — company names, times, contact names, and call types. Always call this first at session start.",
+    "api_schema": {
+      "url": "{API_BASE_URL}/calendar/today",
+      "method": "GET"
+    }
+  },
+  {
+    "type": "webhook",
+    "name": "get_account",
+    "description": "Returns a unified account view from Salesforce, Outreach, and Slack: ARR, plan tier, deal stage, renewal date, account notes, Outreach engagement stats, and recent internal Slack mentions from teammates. Call this first when briefing any account.",
+    "api_schema": {
+      "url": "{API_BASE_URL}/account/{company}",
+      "method": "GET",
+      "path_params_schema": {
+        "company": {
+          "type": "string",
+          "description": "Company name, e.g. 'Notion', 'Deutsche Telekom', 'Linear'. Case-insensitive."
+        }
+      }
+    }
+  },
+  {
+    "type": "webhook",
+    "name": "get_gong",
+    "description": "Returns data from the last Gong call: summary, objections with severity, next steps, competitive mentions, talk-time ratio, and sentiment. Call this alongside get_account for a full brief.",
+    "api_schema": {
+      "url": "{API_BASE_URL}/gong/{company}",
+      "method": "GET",
+      "path_params_schema": {
+        "company": {
+          "type": "string",
+          "description": "Company name. Case-insensitive."
+        }
+      }
+    }
+  },
+  {
+    "type": "webhook",
+    "name": "get_slack_mentions",
+    "description": "Returns recent internal Slack mentions of this company from teammates. Surfaces intel that doesn't live in Salesforce — competitive sightings, warm intros, escalations.",
+    "api_schema": {
+      "url": "{API_BASE_URL}/slack/mentions/{company}",
+      "method": "GET",
+      "path_params_schema": {
+        "company": {
+          "type": "string",
+          "description": "Company name. Case-insensitive."
+        }
+      }
+    }
+  },
+  {
+    "type": "webhook",
+    "name": "get_outreach",
+    "description": "Returns Outreach.io sequence engagement: open rate, reply rate, emails sent, last touch type, and next step in sequence. Use to tell the rep whether the prospect has been warm or going cold.",
+    "api_schema": {
+      "url": "{API_BASE_URL}/outreach/{company}",
+      "method": "GET",
+      "path_params_schema": {
+        "company": {
+          "type": "string",
+          "description": "Company name. Case-insensitive."
+        }
+      }
+    }
+  },
+  {
+    "type": "webhook",
+    "name": "get_wiki_playbook",
+    "description": "Returns the internal sales wiki playbook for this company: recommended talk track, competitive battle card responses, and discovery questions.",
+    "api_schema": {
+      "url": "{API_BASE_URL}/wiki/playbook/company/{company}",
+      "method": "GET",
+      "path_params_schema": {
+        "company": {
+          "type": "string",
+          "description": "Company name. Case-insensitive."
+        }
+      }
+    }
+  },
+  {
+    "type": "webhook",
+    "name": "get_patterns",
+    "description": "Analyzes all of today's meetings and returns cross-call patterns: competitors mentioned in multiple accounts, shared objection categories, and recommended proactive actions. Call this after briefing 2+ accounts.",
+    "api_schema": {
+      "url": "{API_BASE_URL}/patterns/today",
+      "method": "GET"
+    }
+  },
+  {
+    "type": "webhook",
+    "name": "draft_followup",
+    "description": "Drafts a Slack DM the rep can send. action_type options: 'competitive_positioning_note' (team Slack about a competitor), 'next_steps_summary' (recap for the prospect), 'intro_request' (warm intro ask).",
+    "api_schema": {
+      "url": "{API_BASE_URL}/followup/draft",
+      "method": "POST",
+      "request_body_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string",
+            "description": "Company name relevant to the follow-up. Case-insensitive."
+          },
+          "action_type": {
+            "type": "string",
+            "enum": ["competitive_positioning_note", "next_steps_summary", "intro_request"],
+            "description": "Type of follow-up to draft."
+          }
+        },
+        "required": ["company", "action_type"]
+      }
+    }
+  }
+]

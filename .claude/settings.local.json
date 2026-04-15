@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f \"uvicorn api.main\")",
+      "Bash(curl -s https://sdr-briefing-api.fly.dev/health)",
+      "WebFetch(domain:api.elevenlabs.io)",
+      "WebFetch(domain:elevenlabs.io)",
+      "WebSearch",
+      "Bash(curl -s https://api.elevenlabs.io/openapi.json)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -I https://api.elevenlabs.io/openapi.json)",
+      "Bash(python3)"
+    ]
+  }
+}

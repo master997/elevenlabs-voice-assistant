@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SDR Morning Briefing — Voice Assistant Demo</title>
+    <meta
+      name="description"
+      content="A voice-first SDR morning briefing assistant powered by ElevenLabs Conversational AI + a FastAPI backend."
+    />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0b0d12;
+        --card: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.72);
+        --accent: #7c5cff;
+        --accent2: #00d4ff;
+        --shadow: rgba(0, 0, 0, 0.35);
+        --radius: 18px;
+        --max: 980px;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f7f8fb;
+          --card: rgba(10, 13, 18, 0.04);
+          --border: rgba(10, 13, 18, 0.12);
+          --text: rgba(10, 13, 18, 0.92);
+          --muted: rgba(10, 13, 18, 0.72);
+          --shadow: rgba(10, 13, 18, 0.12);
+        }
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(
+            1000px 600px at 18% 0%,
+            rgba(124, 92, 255, 0.22),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 520px at 85% 12%,
+            rgba(0, 212, 255, 0.16),
+            transparent 55%
+          ),
+          var(--bg);
+        color: var(--text);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .wrap {
+        max-width: var(--max);
+        margin: 0 auto;
+        padding: 28px 18px 64px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 2px 24px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+      }
+      .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        box-shadow: 0 10px 30px var(--shadow);
+      }
+      .brand span {
+        font-weight: 650;
+        letter-spacing: 0.2px;
+        opacity: 0.95;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.04);
+        text-decoration: none;
+        color: var(--muted);
+      }
+      .pill strong {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.3fr 0.7fr;
+        gap: 18px;
+        align-items: stretch;
+        margin-top: 8px;
+      }
+
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: var(--radius);
+        box-shadow: 0 24px 60px var(--shadow);
+      }
+
+      .heroMain {
+        padding: 26px 22px;
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 42px;
+        line-height: 1.05;
+        letter-spacing: -0.6px;
+      }
+      @media (max-width: 520px) {
+        h1 {
+          font-size: 34px;
+        }
+      }
+
+      .sub {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.5;
+        max-width: 62ch;
+      }
+
+      .ctaRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-top: 14px;
+      }
+
+      .btn {
+        cursor: pointer;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        padding: 11px 14px;
+        font-weight: 650;
+        letter-spacing: 0.1px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: white;
+        box-shadow: 0 18px 44px rgba(124, 92, 255, 0.22);
+      }
+      .btnSecondary {
+        cursor: pointer;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 11px 14px;
+        font-weight: 650;
+        background: transparent;
+        color: var(--text);
+      }
+
+      .steps {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+      @media (max-width: 900px) {
+        .steps {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .step {
+        padding: 14px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .step b {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 14px;
+      }
+      .step span {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      .heroSide {
+        padding: 18px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 14px;
+      }
+      .kpi {
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .kpi .label {
+        color: var(--muted);
+        font-size: 12.5px;
+        margin-bottom: 6px;
+      }
+      .kpi .value {
+        font-weight: 750;
+        font-size: 18px;
+        letter-spacing: -0.2px;
+      }
+      .kpi .hint {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 6px;
+        line-height: 1.35;
+      }
+
+      .section {
+        margin-top: 22px;
+        padding: 22px;
+      }
+      .section h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        letter-spacing: -0.2px;
+      }
+      .section p {
+        margin: 0 0 10px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      @media (max-width: 900px) {
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      .mini {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .mini b {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 14px;
+      }
+      .mini ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .kbd {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 13px;
+        padding: 3px 8px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .footer {
+        margin-top: 18px;
+        padding: 18px 2px 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="topbar">
+        <a class="brand" href="/">
+          <span class="dot"></span>
+          <span>SDR Morning Briefing</span>
+        </a>
+        <a class="pill" href="#case-study">
+          <strong>Case study</strong> <span>below</span>
+        </a>
+      </div>
+
+      <div class="hero">
+        <div class="card heroMain">
+          <h1>Start your morning in 90 seconds.</h1>
+          <p class="sub">
+            A voice-first SDR briefing assistant that pulls context from
+            Salesforce, Gong, Slack, Outreach, and your internal playbook—then
+            surfaces cross-call patterns like competitor mentions before your
+            first meeting.
+          </p>
+          <div class="ctaRow">
+            <button class="btn" id="startBtn" type="button">
+              Start My Morning
+            </button>
+            <button class="btnSecondary" id="tryScriptBtn" type="button">
+              Copy demo script
+            </button>
+          </div>
+
+          <div class="steps" aria-label="How to try it">
+            <div class="step">
+              <b>1) Click Start</b>
+              <span
+                >Then say <span class="kbd">Start my morning</span>.</span
+              >
+            </div>
+            <div class="step">
+              <b>2) Pick an account</b>
+              <span>Try <span class="kbd">Notion first</span>.</span>
+            </div>
+            <div class="step">
+              <b>3) Trigger the pattern</b>
+              <span
+                >After 2 accounts, say <span class="kbd">Yes</span> when it asks
+                to draft a Slack DM.</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="card heroSide">
+          <div class="kpi">
+            <div class="label">Backend</div>
+            <div class="value">FastAPI on Fly.io</div>
+            <div class="hint">
+              8 endpoints (calendar, account, Gong, Slack, Outreach, wiki,
+              patterns, follow-up draft).
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="label">Voice agent</div>
+            <div class="value">ElevenLabs ConvAI</div>
+            <div class="hint">
+              Voice: Rachel. LLM: Claude. Tools: webhook calls to the live API.
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="label">Tip</div>
+            <div class="value">Works best on mobile</div>
+            <div class="hint">
+              This is designed for reps walking between meetings—short, decisive
+              briefs.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card section" id="case-study">
+        <h2>Case study (short)</h2>
+        <p>
+          SDRs don’t need “more data.” They need the right 2–3 facts at the right
+          moment, without tab switching.
+        </p>
+        <div class="grid2">
+          <div class="mini">
+            <b>What it does</b>
+            <ul>
+              <li>Reads today’s meetings</li>
+              <li>Briefs accounts conversationally (not field-by-field)</li>
+              <li>Detects cross-call patterns (e.g., “Gemini”)</li>
+              <li>Drafts a Slack DM you can send to the team</li>
+            </ul>
+          </div>
+          <div class="mini">
+            <b>Try these prompts</b>
+            <ul>
+              <li><span class="kbd">Start my morning</span></li>
+              <li><span class="kbd">Notion first</span></li>
+              <li><span class="kbd">Give me the top objection responses</span></li>
+              <li><span class="kbd">Deutsche Telekom</span></li>
+              <li><span class="kbd">Yes</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        If the widget doesn’t connect, it usually means the agent isn’t public.
+        In that case, the demo can be switched to a signed-URL flow (server-side
+        token) without exposing API keys.
+      </div>
+    </div>
+
+    <elevenlabs-convai
+      id="convaiWidget"
+      agent-id="agent_0701kp8zca3sfyb986q071k7xv25"
+    ></elevenlabs-convai>
+    <script
+      src="https://elevenlabs.io/convai-widget/index.js"
+      async
+      type="text/javascript"
+    ></script>
+
+    <script>
+      const demoScript = [
+        "Start my morning",
+        "Notion first",
+        "Give me the top objection responses",
+        "Deutsche Telekom",
+        "Yes",
+      ].join("\n");
+
+      function copyText(text) {
+        if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+        const el = document.createElement("textarea");
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        el.remove();
+        return Promise.resolve();
+      }
+
+      document.getElementById("tryScriptBtn").addEventListener("click", async () => {
+        await copyText(demoScript);
+        const btn = document.getElementById("tryScriptBtn");
+        const prev = btn.textContent;
+        btn.textContent = "Copied";
+        setTimeout(() => (btn.textContent = prev), 900);
+      });
+
+      // The widget renders its own floating launcher. This button nudges the user,
+      // and scrolls to top so the launcher is visible on mobile.
+      document.getElementById("startBtn").addEventListener("click", async () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        await copyText("Start my morning");
+        const btn = document.getElementById("startBtn");
+        const prev = btn.textContent;
+        btn.textContent = "Now click the widget (bottom-right)";
+        setTimeout(() => (btn.textContent = prev), 1400);
+      });
+    </script>
+  </body>
+</html>
+
