@@ -43,13 +43,21 @@
     "name": "get_slack_mentions",
     "description": "Returns recent internal Slack mentions of this company from teammates. Surfaces intel that doesn't live in Salesforce — competitive sightings, warm intros, escalations.",
     "api_schema": {
-      "url": "{API_BASE_URL}/slack/mentions/{company}",
-      "method": "GET",
-      "path_params_schema": {
-        "company": {
-          "type": "string",
-          "description": "Company name. Case-insensitive."
-        }
+      "url": "{API_BASE_URL}/slack/mentions",
+      "method": "POST",
+      "request_body_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string",
+            "description": "Company name. Case-insensitive."
+          },
+          "demo_token": {
+            "type": "string",
+            "description": "Demo auth token (sent in request body for this tool runtime)."
+          }
+        },
+        "required": ["company", "demo_token"]
       }
     }
   },

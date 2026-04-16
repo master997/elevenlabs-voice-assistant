@@ -18,6 +18,11 @@ class PostNextStepsBody(BaseModel):
     demo_token: str | None = None
 
 
+class PostSlackMentionsBody(BaseModel):
+    company: str
+    demo_token: str | None = None
+
+
 def _sanitize_slack_text(text: str) -> str:
     return _MASS_MENTION_RE.sub("[mention removed]", text)
 
@@ -116,23 +121,41 @@ def post_next_steps(
     return {
         "ok": True,
         "posted": {"ok": True},
-        "fallback": {"draft_text": body.draft_text},
+        # Return the sanitized version too, so clients never end up copy-pasting pings.
+        "fallback": {"draft_text": sanitized_text},
     }
 
 
-@router.get("/mentions/{company}")
-def get_slack_mentions(company: str):
+@router.post("/mentions")
+def get_slack_mentions(
+    body: PostSlackMentionsBody,
+    x_demo_token: str | None = Header(default=None, alias="X-DEMO-TOKEN"),
+):
     """
     Internal Slack mentions of this company from the rep's teammates.
     Surfaces intel that doesn't live in Salesforce — e.g., a competitor spotted
     on LinkedIn, a warm intro from another team member.
     """
-    data = get_company(company)
+    demo_token = os.getenv("DEMO_TOKEN")
+    presented_token = x_demo_token or body.demo_token
+    if not presented_token or not demo_token or presented_token != demo_token:
+        raise HTTPException(
+            status_code=403,
+            detail=_error_detail(
+                code="forbidden",
+                message="Missing or invalid X-DEMO-TOKEN.",
+                fix="Send X-DEMO-TOKEN header matching the DEMO_TOKEN env var (preferred), or include demo_token in the request body.",
+                draft_text=None,
+            ),
+        )
+
+    # Keep demo inputs predictable: require a known company.
+    data = get_company(body.company)
     if not data:
         raise HTTPException(
             status_code=404,
             detail={
-                "error": f"Company '{company}' not found",
+                "error": f"Company '{body.company}' not found",
                 "valid_companies": list_companies(),
             },
         )
