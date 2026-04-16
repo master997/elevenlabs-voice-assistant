@@ -2,6 +2,7 @@
 
 Live demo stack:
 
+- **Landing page (Vercel)**: `https://elevenlabs-voice-assistant.vercel.app/`
 - **Backend (FastAPI)**: `https://sdr-briefing-api.fly.dev`
 - **Voice agent (ElevenLabs ConvAI)**: `agent_0701kp8zca3sfyb986q071k7xv25`
 
@@ -13,7 +14,7 @@ This project is a voice-first SDR morning briefing assistant. It pulls context f
 
 ## Try it in 60 seconds (non-technical)
 
-- Open the live landing page and click **Start My Morning**.
+- Open `https://elevenlabs-voice-assistant.vercel.app/` and click **Start My Morning**.
 - Click the widget launcher (bottom-right).
 - Say: “Start my morning.”
 - Try: “Notion first”, then “Deutsche Telekom”.
@@ -134,6 +135,11 @@ This updates the existing agent (if `ELEVENLABS_AGENT_ID` is present) and writes
 
 - `/` → `index.html`
 - `/try-agent` → `try-agent.html`
+
+Live:
+
+- `https://elevenlabs-voice-assistant.vercel.app/`
+- `https://elevenlabs-voice-assistant.vercel.app/try-agent`
 
 ## Why voice (short)
 
