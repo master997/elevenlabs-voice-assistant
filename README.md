@@ -7,6 +7,10 @@ Live demo stack:
 
 This project is a voice-first SDR morning briefing assistant. It pulls context from multiple “systems” (mocked): Salesforce, Gong, Slack, Outreach, and an internal sales wiki. It then briefs the rep conversationally and surfaces cross-call patterns (e.g., “Gemini came up in all 3 calls today”), and can draft a Slack DM.
 
+## Docs
+
+- `docs/OUTREACH.md` (Outreach notes / messaging)
+
 ## Try it in 60 seconds (non-technical)
 
 - Open the live landing page and click **Start My Morning**.
@@ -31,6 +35,7 @@ Quick curls (live backend):
 
 ```bash
 BASE="https://sdr-briefing-api.fly.dev"
+curl -s "$BASE/"
 curl -s "$BASE/health"
 curl -s "$BASE/calendar/today"
 curl -s "$BASE/patterns/today"
@@ -41,6 +46,7 @@ curl -s -X POST "$BASE/followup/draft" -H "Content-Type: application/json" \
 
 ## API endpoints (all live)
 
+- `GET /` (basic service info, links to `/health` and `/docs`)
 - `GET /calendar/today`
 - `GET /account/{company}`
 - `GET /gong/{company}`
@@ -67,7 +73,11 @@ python -m pip install -r requirements.txt
 uvicorn api.main:app --reload --port 8080
 ```
 
-Visit `http://localhost:8080/health`.
+Visit:
+
+- `http://localhost:8080/` (service info)
+- `http://localhost:8080/health`
+- `http://localhost:8080/docs` (interactive Swagger UI)
 
 ### 3) Run tests
 
@@ -117,6 +127,13 @@ This updates the existing agent (if `ELEVENLABS_AGENT_ID` is present) and writes
 ### Fly.io backend
 
 `fly.toml` and `Dockerfile` are included. Once deployed, you can enable auto-deploy on pushes to `main` via GitHub Actions by adding a `FLY_API_TOKEN` secret.
+
+### Vercel landing page
+
+`vercel.json` routes:
+
+- `/` → `index.html`
+- `/try-agent` → `try-agent.html`
 
 ## Why voice (short)
 
