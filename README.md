@@ -19,6 +19,118 @@ The point of the demo is simple: give a rep the right 2 to 3 facts before each m
 - Detects cross-call patterns (example: competitor “Gemini” appears in multiple calls)
 - Drafts a Slack DM (copy-only UI on the landing page)
 
+## Mock data and demo “scripts”
+
+This repo is intentionally self-contained. All “CRM/call/Slack/Outreach/wiki” info is mocked in code so the demo is deterministic.
+
+- **Company data (source of truth)**: `api/data/companies.py`
+  - Each company record unifies:
+    - `sf_profile` (Salesforce-like account object)
+    - `gong_last_call` (call summary, objections, next steps, competitive mentions)
+    - `slack_mentions` (teammate intel)
+    - `outreach` (sequence engagement)
+    - `wiki_playbook` (talk track, competitive responses)
+  - **Today’s meeting set** is driven by `TODAY_MEETINGS` in the same file.
+- **Cross-call patterns**: `api/data/patterns.py` (computed from `TODAY_MEETINGS`)
+- **Mock calendar response**: `api/routers/calendar.py`
+
+If you want the demo to “tell a different story”, edit:
+
+- `api/data/companies.py` (change objections, next steps, competitor mentions, Slack quotes)
+- `api/routers/calendar.py` (change the day’s meeting list + times)
+
+### Example mock responses (live backend)
+
+`GET /calendar/today`:
+
+```json
+{
+  "date": "2026-04-16",
+  "meetings": [
+    { "time": "10:00", "company": "Notion", "contact": "Maya Chen", "title": "Head of Engineering", "type": "discovery" },
+    { "time": "13:00", "company": "Deutsche Telekom", "contact": "Klaus Weber", "title": "VP of Digital Products", "type": "follow-up" },
+    { "time": "15:30", "company": "Linear", "contact": "Karri Saarinen", "title": "CEO", "type": "demo" }
+  ]
+}
+```
+
+`GET /account/Notion` (shape):
+
+```json
+{
+  "company": "Notion",
+  "arr": 28000,
+  "arr_formatted": "$28,000",
+  "plan": "Business",
+  "stage": "Discovery",
+  "outreach_summary": { "sequence": "SMB Inbound — Technical Buyer", "last_touch": "2026-04-10" },
+  "recent_slack_activity": [{ "from": "Sarah Kim", "channel": "#deals-smb", "text": "FYI — I saw Notion is also talking to Gemini's API team...", "ts": "2026-04-14T18:05:00Z" }]
+}
+```
+
+`GET /patterns/today` (shape):
+
+```json
+{
+  "date": "today",
+  "meetings_analyzed": ["notion", "deutsche telekom", "linear"],
+  "competitive_patterns": [{ "competitor": "Gemini", "accounts": ["notion", "deutsche telekom", "linear"], "count": 3, "signal": "high" }],
+  "recommended_actions": [{ "type": "competitive_positioning_note", "competitor": "Gemini" }]
+}
+```
+
+`POST /slack/mentions` (request + response):
+
+Notes:
+
+- This endpoint is **demo-token gated** by `DEMO_TOKEN`.
+- Preferred auth is `X-DEMO-TOKEN` header, but the demo agent/tooling can also send `demo_token` in the JSON body.
+
+Request:
+
+```json
+{ "company": "Notion", "demo_token": "demo123" }
+```
+
+Response:
+
+```json
+{
+  "company": "Notion",
+  "mention_count": 2,
+  "mentions": [
+    {
+      "from": "Alex Rivera",
+      "channel": "#deals-smb",
+      "text": "Notion discovery is tomorrow at 10. Maya is sharp — already asked about our concurrency model. Make sure we have the rate limit doc ready.",
+      "ts": "2026-04-14T17:42:00Z"
+    },
+    {
+      "from": "Sarah Kim",
+      "channel": "#deals-smb",
+      "text": "FYI — I saw Notion is also talking to Gemini's API team. Tom Park posted about it on LinkedIn last week. Worth bringing up our latency benchmarks proactively.",
+      "ts": "2026-04-14T18:05:00Z"
+    }
+  ]
+}
+```
+
+If the token is missing or wrong, you get a `403` with a structured `detail`:
+
+```json
+{
+  "detail": {
+    "ok": false,
+    "error": {
+      "code": "forbidden",
+      "message": "Missing or invalid X-DEMO-TOKEN.",
+      "fix": "Send X-DEMO-TOKEN header matching the DEMO_TOKEN env var (preferred), or include demo_token in the request body."
+    },
+    "fallback": { "draft_text": null }
+  }
+}
+```
+
 ## Demo script (90 seconds)
 
 1. Click **Start My Morning**
