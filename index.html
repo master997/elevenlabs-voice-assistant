@@ -201,11 +201,21 @@
         margin-top: 10px;
       }
 
+      /* Ensure the HTML `hidden` attribute actually hides these elements.
+         Without this, the CSS `display:flex` keeps them visible. */
+      .statusActions[hidden] {
+        display: none !important;
+      }
+
       .statusDetails {
         margin-top: 10px;
         color: var(--muted);
         font-size: 13.5px;
         line-height: 1.45;
+      }
+
+      .statusDetails[hidden] {
+        display: none !important;
       }
 
       .statusDetails summary {
@@ -686,6 +696,15 @@
         }
       }
 
+      async function waitForWidgetDefined(timeoutMs = 6000, pollMs = 100) {
+        const start = Date.now();
+        while (Date.now() - start < timeoutMs) {
+          if (customElements.get("elevenlabs-convai")) return true;
+          await new Promise((r) => setTimeout(r, pollMs));
+        }
+        return false;
+      }
+
       async function initStatus() {
         setStatus("loading");
 
@@ -695,10 +714,8 @@
           return;
         }
 
-        setTimeout(() => {
-          const defined = !!customElements.get("elevenlabs-convai");
-          setStatus(defined ? "ready" : "widgetMissing");
-        }, 4500);
+        const defined = await waitForWidgetDefined();
+        setStatus(defined ? "ready" : "widgetMissing");
       }
 
       document.getElementById("tryScriptBtn").addEventListener("click", async () => {
@@ -730,8 +747,20 @@
           }
         });
 
-      document.getElementById("retryWidgetBtn")?.addEventListener("click", () => {
-        location.reload();
+      document.getElementById("retryWidgetBtn")?.addEventListener("click", async () => {
+        // Avoid a full page reload, just re-create the widget and re-check status.
+        // This prevents the UI from getting stuck in a long "loading" window.
+        const prevWidget = document.getElementById("convaiWidget");
+        const agentId =
+          prevWidget?.getAttribute("agent-id") ?? "agent_0701kp8zca3sfyb986q071k7xv25";
+
+        prevWidget?.remove();
+        const nextWidget = document.createElement("elevenlabs-convai");
+        nextWidget.id = "convaiWidget";
+        nextWidget.setAttribute("agent-id", agentId);
+        document.body.appendChild(nextWidget);
+
+        await initStatus();
       });
 
       document
