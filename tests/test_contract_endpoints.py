@@ -131,7 +131,7 @@ def test_slack_post_next_steps_200_contract(client, monkeypatch):
     body = r.json()
     assert body["ok"] is True
     assert body["posted"] == {"ok": True}
-    assert body["fallback"]["draft_text"] == "hello <!channel>"
+    assert body["fallback"]["draft_text"] == "hello [mention removed]"
 
 
 def test_slack_post_next_steps_missing_token_403_contract(client, monkeypatch):
@@ -197,45 +197,65 @@ def test_slack_post_next_steps_success_contract(client, monkeypatch):
     assert r.status_code == 200
     body = r.json()
 
-    assert body == {"ok": True, "posted": {"ok": True}, "fallback": {"draft_text": payload["draft_text"]}}
+    assert body == {
+        "ok": True,
+        "posted": {"ok": True},
+        "fallback": {"draft_text": "Hello [mention removed] world"},
+    }
     assert calls["url"] == "https://hooks.slack.com/services/T000/B000/XXX"
     assert calls["timeout"] == 5.0
     assert "[mention removed]" in calls["json"]["text"]
     assert "<!channel>" not in calls["json"]["text"]
 
 
-def test_slack_post_next_steps_missing_token_403_contract(client, monkeypatch):
+def test_slack_mentions_200_contract(client, monkeypatch):
     monkeypatch.setenv("DEMO_TOKEN", "demo123")
-    monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.com/services/T000/B000/XXX")
 
-    payload = {"company": "Notion", "draft_text": "Draft"}
-    r = client.post("/slack/post-next-steps", json=payload)
+    r = client.post(
+        "/slack/mentions",
+        json={"company": "Notion", "demo_token": "demo123"},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["company"] == "Notion"
+    assert isinstance(body["mention_count"], int)
+    assert body["mention_count"] == len(body["mentions"])
+    assert isinstance(body["mentions"], list)
+
+
+def test_slack_mentions_missing_token_403_contract(client, monkeypatch):
+    monkeypatch.setenv("DEMO_TOKEN", "demo123")
+
+    r = client.post("/slack/mentions", json={"company": "Notion"})
     assert r.status_code == 403
-    detail = r.json()["detail"]
-    assert detail["ok"] is False
-    assert detail["fallback"]["draft_text"] == "Draft"
+    body = r.json()
+    assert body["detail"]["ok"] is False
+    assert body["detail"]["fallback"]["draft_text"] is None
 
 
-def test_slack_post_next_steps_wrong_token_403_contract(client, monkeypatch):
+def test_slack_mentions_wrong_token_403_contract(client, monkeypatch):
     monkeypatch.setenv("DEMO_TOKEN", "demo123")
-    monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.com/services/T000/B000/XXX")
 
-    payload = {"company": "Notion", "draft_text": "Draft"}
-    r = client.post("/slack/post-next-steps", json=payload, headers={"X-DEMO-TOKEN": "nope"})
+    r = client.post(
+        "/slack/mentions",
+        json={"company": "Notion", "demo_token": "nope"},
+    )
     assert r.status_code == 403
-    detail = r.json()["detail"]
-    assert detail["ok"] is False
-    assert detail["fallback"]["draft_text"] == "Draft"
+    body = r.json()
+    assert body["detail"]["ok"] is False
+    assert body["detail"]["fallback"]["draft_text"] is None
 
 
-def test_slack_post_next_steps_missing_webhook_url_500_contract(client, monkeypatch):
+def test_slack_mentions_unknown_company_404_contract(client, monkeypatch):
     monkeypatch.setenv("DEMO_TOKEN", "demo123")
-    monkeypatch.delenv("SLACK_WEBHOOK_URL", raising=False)
 
-    payload = {"company": "Notion", "draft_text": "Draft"}
-    r = client.post("/slack/post-next-steps", json=payload, headers={"X-DEMO-TOKEN": "demo123"})
-    assert r.status_code == 500
-    detail = r.json()["detail"]
-    assert detail["ok"] is False
-    assert detail["fallback"]["draft_text"] == "Draft"
+    r = client.post(
+        "/slack/mentions",
+        json={"company": "does-not-exist", "demo_token": "demo123"},
+    )
+    assert r.status_code == 404
+    body = r.json()
+    assert "detail" in body
+    detail = body["detail"]
+    assert detail["valid_companies"] == list_companies()
 

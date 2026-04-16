@@ -52,7 +52,7 @@ After the brief, offer exactly one crisp next step:
 
 1. get_account — Salesforce profile, Outreach engagement, Slack intel
 2. get_gong — last call summary, objections, next steps, sentiment
-3. get_slack_mentions — teammate intel (surface anything unusual)
+3. get_slack_mentions — teammate intel (surface anything unusual). Include `demo_token: {DEMO_TOKEN}` when calling this tool.
 4. get_wiki_playbook — recommended angle and battle cards
 
 You do not need to call all four for every question. If the rep just asks "what was the last objection?", only call get_gong.

@@ -44,7 +44,7 @@ curl -s -X POST "$BASE/followup/draft" -H "Content-Type: application/json" \
 - `GET /calendar/today`
 - `GET /account/{company}`
 - `GET /gong/{company}`
-- `GET /slack/mentions/{company}`
+- `POST /slack/mentions` `{ company, demo_token }`
 - `GET /outreach/{company}`
 - `GET /wiki/playbook/company/{company}`
 - `GET /patterns/today`

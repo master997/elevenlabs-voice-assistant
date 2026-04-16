@@ -188,7 +188,20 @@ def main():
     print(f'<script src="https://elevenlabs.io/convai-widget/index.js" async></script>')
 
     update_env_agent_id(agent_id)
-    save_config_snapshot(payload, agent_id)
+    # Never commit real demo tokens into agent config snapshots.
+    payload_snapshot = json.loads(json.dumps(payload))
+    prompt = (
+        payload_snapshot.get("conversation_config", {})
+        .get("agent", {})
+        .get("prompt", {})
+        .get("prompt")
+    )
+    if isinstance(prompt, str):
+        payload_snapshot["conversation_config"]["agent"]["prompt"]["prompt"] = prompt.replace(
+            DEMO_TOKEN, "{DEMO_TOKEN}"
+        )
+
+    save_config_snapshot(payload_snapshot, agent_id)
     print(f"\nDone. ELEVENLABS_AGENT_ID written to .env")
 
 
