@@ -1,36 +1,42 @@
-# SDR Morning Briefing — ElevenLabs Voice Agent Demo
+# SDR Morning Briefing, ElevenLabs Voice Agent Demo
 
-Live demo stack:
+A voice-first SDR “morning standup” assistant.
+
+The point of the demo is simple: give a rep the right 2 to 3 facts before each meeting, hands-free, with one follow-up action (draft a Slack DM) when a cross-call pattern shows up.
+
+## Live demo
 
 - **Landing page (Vercel)**: `https://elevenlabs-voice-assistant.vercel.app/`
+  - `/try-agent`: `https://elevenlabs-voice-assistant.vercel.app/try-agent`
 - **Backend (FastAPI)**: `https://sdr-briefing-api.fly.dev`
 - **Voice agent (ElevenLabs ConvAI)**: `agent_0701kp8zca3sfyb986q071k7xv25`
 
-This project is a voice-first SDR morning briefing assistant. It pulls context from multiple “systems” (mocked): Salesforce, Gong, Slack, Outreach, and an internal sales wiki. It then briefs the rep conversationally and surfaces cross-call patterns (e.g., “Gemini came up in all 3 calls today”), and can draft a Slack DM.
+## What it does
 
-## Docs
+- Reads today’s meetings (mock calendar)
+- Briefs each account conversationally (not field-by-field)
+- Pulls context from mocked “systems”: Salesforce, Gong, Slack, Outreach, internal wiki
+- Detects cross-call patterns (example: competitor “Gemini” appears in multiple calls)
+- Drafts a Slack DM (copy-only UI on the landing page)
 
-- `docs/OUTREACH.md` (Outreach notes / messaging)
+## Demo script (90 seconds)
 
-## Try it in 60 seconds (non-technical)
+1. Click **Start My Morning**
+2. Say: “Start my morning”
+3. Say: “Notion first”
+4. Say: “Give me the top objection responses”
+5. Say: “Deutsche Telekom”
+6. When it offers to draft a Slack DM, say: “Yes”
 
-- Open `https://elevenlabs-voice-assistant.vercel.app/` and click **Start My Morning**.
-- Click the widget launcher (bottom-right).
-- Say: “Start my morning.”
-- Try: “Notion first”, then “Deutsche Telekom”.
-- When it offers to draft a Slack DM, say “Yes”.
+## Troubleshooting (widget + mic)
 
-## What to try (90-second script)
+- **Mic blocked**: allow microphone access for the site, then reload. On iOS Safari, also check Settings → Safari → Microphone.
+- **Widget won’t connect**: most common cause is the ElevenLabs agent not being public. Switch it to public, or implement a signed-URL/token flow.
+- **CORS errors (local dev)**: add your frontend origin to the `allow_origins` list (or set a safe `allow_origin_regex`) in `api/main.py`.
 
-1. “Start my morning”
-2. “Notion first”
-3. “Give me the top objection responses”
-4. “Deutsche Telekom”
-5. “Yes”
+## API contract (backend)
 
-## Engineer deep dive (contracts + curl)
-
-The agent calls your HTTP API at `API_BASE_URL` using the routes below. Responses are JSON. Non-2xx responses should include a structured `detail` payload (see examples in tests).
+The agent calls your HTTP API at `API_BASE_URL`. Responses are JSON.
 
 Quick curls (live backend):
 
@@ -45,19 +51,21 @@ curl -s -X POST "$BASE/followup/draft" -H "Content-Type: application/json" \
   -d '{"company":"Deutsche Telekom","action_type":"next_steps_summary"}'
 ```
 
-## API endpoints (all live)
+Endpoints:
 
-- `GET /` (basic service info, links to `/health` and `/docs`)
+- `GET /` (service info, links to `/health` and `/docs`)
+- `GET /health`
 - `GET /calendar/today`
 - `GET /account/{company}`
 - `GET /gong/{company}`
-- `POST /slack/mentions` `{ company, demo_token }`
 - `GET /outreach/{company}`
 - `GET /wiki/playbook/company/{company}`
 - `GET /patterns/today`
 - `POST /followup/draft` `{ company, action_type }`
+- `POST /slack/mentions` `{ company, demo_token }`
+  - For the demo, this endpoint is token-gated by `DEMO_TOKEN` (prefer `X-DEMO-TOKEN`, body token is also accepted).
 
-## Local setup
+## Local development
 
 ### 1) Create a venv and install deps
 
@@ -76,9 +84,9 @@ uvicorn api.main:app --reload --port 8080
 
 Visit:
 
-- `http://localhost:8080/` (service info)
+- `http://localhost:8080/`
 - `http://localhost:8080/health`
-- `http://localhost:8080/docs` (interactive Swagger UI)
+- `http://localhost:8080/docs`
 
 ### 3) Run tests
 
@@ -87,61 +95,36 @@ Visit:
 pytest -q
 ```
 
-## Troubleshooting (mic/widget/CORS)
-
-- **Mic blocked**: allow microphone access for the site, then reload. On iOS Safari, also check Settings → Safari → Microphone.
-- **Widget won’t connect**: most common cause is the ElevenLabs agent not being public. Switch it to public, or implement a signed-URL/token flow.
-- **CORS errors**: add your frontend origin to the `allow_origins` list (or set a safe `allow_origin_regex`) in `api/main.py`.
-
 ## Updating the ElevenLabs agent
 
-The agent is created/updated programmatically.
+Source of truth:
 
-- **Prompt source of truth**: `agent/system_prompt.md`
-- **Tool definitions**: `agent/tools.json`
-- **Push script**: `agent/create_agent.py`
+- Prompt: `agent/system_prompt.md`
+- Tools: `agent/tools.json`
+- Push script: `agent/create_agent.py`
 
-### Steps
+Steps:
 
-1) Copy `.env.example` → `.env` and set:
-
-- `ELEVENLABS_API_KEY=...`
-- `API_BASE_URL=https://sdr-briefing-api.fly.dev` (or your local/ngrok URL)
-
-2) Run:
+1. Copy `.env.example` → `.env` and set:
+   - `ELEVENLABS_API_KEY=...`
+   - `API_BASE_URL=https://sdr-briefing-api.fly.dev` (or your local/ngrok URL)
+2. Run:
 
 ```bash
 . .venv/bin/activate
 python agent/create_agent.py
 ```
 
-This updates the existing agent (if `ELEVENLABS_AGENT_ID` is present) and writes a fresh config snapshot to `agent/agent_config.json`.
+This updates the existing agent (if `ELEVENLABS_AGENT_ID` is set) and writes a snapshot to `agent/agent_config.json`.
 
-## Security notes
+## Deployment notes
 
-- `.env` is gitignored; don’t commit keys.
-- If an API key is ever pasted into chat/logs, rotate it immediately in ElevenLabs.
-- When creating an ElevenLabs key for this repo, scope it to the minimum (typically **ElevenAgents: Write** is sufficient for agent updates).
+- **Fly.io backend**: `fly.toml` and `Dockerfile` are included.
+- **Vercel frontend**: `vercel.json` routes:
+  - `/` → `index.html`
+  - `/try-agent` → `try-agent.html`
 
-## Deployment
+## Extra
 
-### Fly.io backend
-
-`fly.toml` and `Dockerfile` are included. Once deployed, you can enable auto-deploy on pushes to `main` via GitHub Actions by adding a `FLY_API_TOKEN` secret.
-
-### Vercel landing page
-
-`vercel.json` routes:
-
-- `/` → `index.html`
-- `/try-agent` → `try-agent.html`
-
-Live:
-
-- `https://elevenlabs-voice-assistant.vercel.app/`
-- `https://elevenlabs-voice-assistant.vercel.app/try-agent`
-
-## Why voice (short)
-
-SDRs are mobile between meetings. Voice reduces tab-switching and lets the rep get “just enough” context (2–3 points) with natural follow-ups.
+- Outreach copy: `docs/OUTREACH.md`
 
