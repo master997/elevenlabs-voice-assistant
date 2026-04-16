@@ -9,4 +9,8 @@ COPY . .
 
 EXPOSE 8080
 
+# SECURITY: run the API as a non-root user in production.
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+USER appuser
+
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8080"]

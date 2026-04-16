@@ -15,12 +15,10 @@ _MASS_MENTION_RE = re.compile(r"<!(channel|here|everyone)>", flags=re.IGNORECASE
 class PostNextStepsBody(BaseModel):
     company: str
     draft_text: str
-    demo_token: str | None = None
 
 
 class PostSlackMentionsBody(BaseModel):
     company: str
-    demo_token: str | None = None
 
 
 def _sanitize_slack_text(text: str) -> str:
@@ -41,14 +39,13 @@ def post_next_steps(
     x_demo_token: str | None = Header(default=None, alias="X-DEMO-TOKEN"),
 ):
     demo_token = os.getenv("DEMO_TOKEN")
-    presented_token = x_demo_token or body.demo_token
-    if not presented_token or not demo_token or presented_token != demo_token:
+    if not x_demo_token or not demo_token or x_demo_token != demo_token:
         raise HTTPException(
             status_code=403,
             detail=_error_detail(
                 code="forbidden",
                 message="Missing or invalid X-DEMO-TOKEN.",
-                fix="Send X-DEMO-TOKEN header matching the DEMO_TOKEN env var (preferred), or include demo_token in the request body.",
+                fix="Send X-DEMO-TOKEN header matching the DEMO_TOKEN env var.",
                 draft_text=body.draft_text,
             ),
         )
@@ -137,14 +134,13 @@ def get_slack_mentions(
     on LinkedIn, a warm intro from another team member.
     """
     demo_token = os.getenv("DEMO_TOKEN")
-    presented_token = x_demo_token or body.demo_token
-    if not presented_token or not demo_token or presented_token != demo_token:
+    if not x_demo_token or not demo_token or x_demo_token != demo_token:
         raise HTTPException(
             status_code=403,
             detail=_error_detail(
                 code="forbidden",
                 message="Missing or invalid X-DEMO-TOKEN.",
-                fix="Send X-DEMO-TOKEN header matching the DEMO_TOKEN env var (preferred), or include demo_token in the request body.",
+                fix="Send X-DEMO-TOKEN header matching the DEMO_TOKEN env var.",
                 draft_text=None,
             ),
         )
