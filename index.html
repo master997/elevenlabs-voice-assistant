@@ -364,6 +364,51 @@
         font-size: 13px;
         line-height: 1.5;
       }
+
+      .resultHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+      }
+
+      .resultBox {
+        width: 100%;
+        min-height: 160px;
+        resize: vertical;
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        padding: 12px 12px;
+        font-size: 14px;
+        line-height: 1.45;
+        outline: none;
+      }
+
+      .resultBox::placeholder {
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      @media (prefers-color-scheme: light) {
+        .resultBox::placeholder {
+          color: rgba(10, 13, 18, 0.55);
+        }
+      }
     </style>
   </head>
   <body>
@@ -501,6 +546,27 @@
               <li><span class="kbd">Yes</span></li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      <div class="card section" id="automation-result">
+        <div class="resultHeader">
+          <h2 style="margin: 0">Automation result</h2>
+          <span class="tag" aria-label="Slack channel">#demo-standup</span>
+        </div>
+        <p>
+          Paste or review the draft below. This is copy-only UI (no API calls).
+        </p>
+        <textarea
+          class="resultBox"
+          id="automationText"
+          spellcheck="false"
+          placeholder="Paste the drafted message here…"
+        ></textarea>
+        <div class="statusActions" style="margin-top: 10px">
+          <button class="btnSecondary" id="copyAutomationBtn" type="button">
+            Copy draft
+          </button>
         </div>
       </div>
 
@@ -647,6 +713,22 @@
           setTimeout(() => (btn.textContent = prev), 900);
         }
       });
+
+      document
+        .getElementById("copyAutomationBtn")
+        ?.addEventListener("click", async () => {
+          const btn = document.getElementById("copyAutomationBtn");
+          const box = document.getElementById("automationText");
+          const prev = btn.textContent;
+          try {
+            await copyText((box?.value ?? "").trim());
+            btn.textContent = "Copied";
+          } catch {
+            btn.textContent = "Copy failed";
+          } finally {
+            setTimeout(() => (btn.textContent = prev), 900);
+          }
+        });
 
       document.getElementById("retryWidgetBtn")?.addEventListener("click", () => {
         location.reload();

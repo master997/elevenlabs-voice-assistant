@@ -159,10 +159,20 @@ def main():
         print("ERROR: ELEVENLABS_API_KEY not set. Copy .env.example to .env and add your key.")
         sys.exit(1)
 
+    DEMO_TOKEN = os.getenv("DEMO_TOKEN")
+    if not DEMO_TOKEN:
+        print(
+            "ERROR: DEMO_TOKEN not set.\n"
+            "Set DEMO_TOKEN in your environment or .env (same value you used for Fly secrets)\n"
+            "so the agent can auth the Slack demo webhook tool."
+        )
+        sys.exit(1)
+
     print(f"API base URL: {API_BASE_URL}")
     print(f"Voice: Rachel ({RACHEL_VOICE_ID})")
 
     system_prompt = load_system_prompt()
+    system_prompt = system_prompt.replace("{DEMO_TOKEN}", DEMO_TOKEN)
     tools = load_tools(API_BASE_URL)
     payload = build_agent_payload(system_prompt, tools)
 

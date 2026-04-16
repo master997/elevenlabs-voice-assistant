@@ -115,5 +115,32 @@
         "required": ["company", "action_type"]
       }
     }
+  },
+  {
+    "type": "webhook",
+    "name": "post_next_steps_to_slack",
+    "description": "Posts next steps to Slack for this company. Use right after drafting a next_steps_summary.",
+    "api_schema": {
+      "url": "{API_BASE_URL}/slack/post-next-steps",
+      "method": "POST",
+      "request_body_schema": {
+        "type": "object",
+        "properties": {
+          "company": {
+            "type": "string",
+            "description": "Company name relevant to the next steps. Case-insensitive."
+          },
+          "draft_text": {
+            "type": "string",
+            "description": "The drafted next steps text to post to Slack."
+          },
+          "demo_token": {
+            "type": "string",
+            "description": "Demo auth token (used because this tool runtime cannot set request headers)."
+          }
+        },
+        "required": ["company", "draft_text", "demo_token"]
+      }
+    }
   }
 ]
