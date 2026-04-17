@@ -12,6 +12,15 @@ app = FastAPI(
     version="0.2.0",
 )
 
+
+@app.get("/")
+def root():
+    return {
+        "service": "SDR Morning Briefing API",
+        "version": app.version,
+        "links": {"health": "/health", "docs": "/docs"},
+    }
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
